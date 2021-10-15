@@ -76,16 +76,44 @@ class Product:
     
     def validation(self, name, price, quantity):
         return len(name.get()) != 0 and len(price.get()) != 0 and len(quantity.get()) != 0
+    
+    def name_exist(self):
 
-    def add_product(self):
+        query = 'SELECT name FROM product' #hacemos la query para cargar los names
+        db_prueba = self.run_query(query) #guardamos los datos de la db
+        arreglo = [] #creamos un arreglo para guardar los datos
+
+        for prueba in db_prueba:
+            arreglo.extend(prueba) #asignamos los datos al arreglo
+
+        bandera = True #bandera
+
+        for arre in arreglo: #comparamos si el name del arreglo es igual a lo de input
+
+            if arre == self.name.get(): #si son iguales retornamos false
+                bandera = False 
+
+        return bandera
+          
+    def add_product(self):    
+            
         if self.validation(self.name, self.price, self.quantity):
-            query = 'INSERT INTO product VALUES(NULL, ?, ?, ?)'
-            parameters = (self.name.get(), self.price.get(), self.quantity.get())
-            self.run_query(query, parameters)
-            self.message['text'] = 'Product {} added Successfully'.format(self.name.get())
-            self.name.delete(0, END)
-            self.price.delete(0, END)
-            self.quantity.delete(0, END)
+
+            print(self.name_exist())    
+
+            if self.name_exist():
+
+                query = 'INSERT INTO product VALUES(NULL, ?, ?, ?)'
+                parameters = (self.name.get(), self.price.get(), self.quantity.get())
+                self.run_query(query, parameters)
+                self.message['text'] = 'Product {} added Successfully'.format(self.name.get())
+                self.name.delete(0, END)
+                self.price.delete(0, END)
+                self.quantity.delete(0, END)
+
+            else:
+
+                self.message['text'] = 'Name does exist'  
 
         else:
             self.message['text'] = 'Name, Price and Quantity are required'
