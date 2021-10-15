@@ -14,7 +14,7 @@ class Product:
         #contenedor
         frame = LabelFrame(self.wind, text = 'Register a new product')
         #grid para posicionar elementos
-        frame.grid(row = 0, column=0, columnspan=3, pady = 20)
+        frame.grid(row = 0, column=0, columnspan=4, pady = 20)
 
         #name input
         Label(frame, text = 'Name: ').grid(row = 1, column=0)
@@ -37,18 +37,19 @@ class Product:
 
         #mensaje de salida
         self.message = Label(text='', fg='red')
-        self.message.grid(row=3, column=0, columnspan=2, sticky= W + E)
+        self.message.grid(row=3, column=0, columnspan=10, sticky= W + E)
 
         #tabla
-        self.tree = ttk.Treeview(height=10, columns=3)
-        self.tree.grid(row=4, column=0, columnspan=2)
-        self.tree.heading('#0', text = 'Name', anchor=CENTER)
-        self.tree.heading('#1', text = 'Price', anchor=CENTER)
-        self.tree.heading('#2', text = 'Quantity', anchor=CENTER)
+        self.tree = ttk.Treeview(height=10, columns=("#1", "#2", "#3"))
+        self.tree.grid(row=5, column=0, columnspan=5)
+        self.tree['show'] = 'headings'
+        self.tree.heading('#1', text = 'Name', anchor=CENTER)
+        self.tree.heading('#2', text = 'Price', anchor=CENTER)
+        self.tree.heading('#3', text = 'Quantity', anchor=CENTER)
 
         #botones
-        ttk.Button(text='DELETE', command=self.delete_product).grid(row=5, column=0, sticky=W + E)
-        ttk.Button(text='UPDATE', command=self.edit_product).grid(row=5, column=1, sticky=W + E)
+        ttk.Button(text='DELETE', command=self.delete_product).grid(row=6, column=0,columnspan=2, sticky=W + E)
+        ttk.Button(text='UPDATE', command=self.edit_product).grid(row=6, column=2,columnspan=2, sticky=W + E)
 
         #llenando las filas
         self.get_products()
@@ -71,19 +72,21 @@ class Product:
         db_rows = self.run_query(query)
         #rellenando los datos
         for row in db_rows:
-            self.tree.insert('', 0, text = row[1], values=row[2])
+            print(row)
+            self.tree.insert('', 0, text = row[1], values=(row[1],row[2],row[3]))
     
     def validation(self):
         return len(self.name.get()) != 0 and len(self.price.get()) != 0
 
     def add_product(self):
         if self.validation():
-            query = 'INSERT INTO product VALUES(NULL, ?, ?)'
-            parameters = (self.name.get(), self.price.get())
+            query = 'INSERT INTO product VALUES(NULL, ?, ?, ?)'
+            parameters = (self.name.get(), self.price.get(), self.quantity.get())
             self.run_query(query, parameters)
             self.message['text'] = 'Product {} added Successfully'.format(self.name.get())
             self.name.delete(0, END)
             self.price.delete(0, END)
+            self.quantity.delete(0, END)
 
         else:
             self.message['text'] = 'Name and Price are required'
@@ -116,7 +119,8 @@ class Product:
             return
 
         name = self.tree.item(self.tree.selection())['text']
-        old_price = self.tree.item(self.tree.selection())['values'][0]
+        old_price = self.tree.item(self.tree.selection())['values'][1]
+        old_quantity = self.tree.item(self.tree.selection())['values'][2]
 
         #crear una ventana encima
         self.edit_wind = Toplevel()
@@ -140,12 +144,21 @@ class Product:
         new_price = Entry(self.edit_wind)
         new_price.grid(row=3, column=2)
 
-        #boton de actualizar
-        Button(self.edit_wind, text='Update', command=lambda: self.edit_records(new_name.get(), name, new_price.get(), old_price)).grid(row=4, column=4)
+        #cantidad vieja
+        Label(self.edit_wind, text='Old quantity: ').grid(row=4, column=1)
+        Entry(self.edit_wind, textvariable=StringVar(self.edit_wind, value=old_quantity), state='readonly').grid(row=4, column=2)
 
-    def edit_records(self, new_name, name, new_price, old_price):
-        query = 'UPDATE product SET name = ?, price = ? WHERE name = ? AND price = ?'
-        parameters = (new_name,new_price,name,old_price)
+        #cantidad nueva
+        Label(self.edit_wind, text='New price: ').grid(row=5, column=1)
+        new_quantity = Entry(self.edit_wind)
+        new_quantity.grid(row=5, column=2)
+
+        #boton de actualizar
+        Button(self.edit_wind, text='Update', command=lambda: self.edit_records(new_name.get(), name, new_price.get(), old_price, new_quantity.get())).grid(row=7, column=1, columnspan=2, sticky= W + E)
+
+    def edit_records(self, new_name, name, new_price, old_price, new_quantity):
+        query = 'UPDATE product SET name = ?, price = ?, quantity = ? WHERE name = ? AND price = ?'
+        parameters = (new_name, new_price, new_quantity, name, old_price)
         self.run_query(query, parameters)
         self.edit_wind.destroy()
         self.message['text'] = 'Record {} update successfully'.format(name) 
