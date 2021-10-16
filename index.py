@@ -8,6 +8,7 @@ class Product:
     db_name = 'database.db'
 
     def __init__(self, window):
+
         self.wind = window
         self.wind.title('Products Application')
 
@@ -77,7 +78,7 @@ class Product:
     def validation(self, name, price, quantity):
         return len(name.get()) != 0 and len(price.get()) != 0 and len(quantity.get()) != 0
     
-    def name_exist(self):
+    def name_exist(self, input_entry, var_comparable = ""):
 
         query = 'SELECT name FROM product' #hacemos la query para cargar los names
         db_prueba = self.run_query(query) #guardamos los datos de la db
@@ -88,20 +89,24 @@ class Product:
 
         bandera = True #bandera
 
-        for arre in arreglo: #comparamos si el name del arreglo es igual a lo de input
+        if var_comparable == "": #esta validacion es en el caso de agregar productos
+            for arre in arreglo: #comparamos si el name del arreglo es igual a lo del input
 
-            if arre == self.name.get(): #si son iguales retornamos false
-                bandera = False 
+                if arre == input_entry.get(): #si son iguales retornamos false
+                    bandera = False 
+        else:
+            for arre in arreglo: #comparamos si el name del arreglo es igual a lo del input
 
+                if arre == input_entry.get() and var_comparable != input_entry.get() : #si son iguales retornamos false
+                        bandera = False 
+    
         return bandera
-          
+        
     def add_product(self):    
             
-        if self.validation(self.name, self.price, self.quantity):
+        if self.validation(self.name, self.price, self.quantity):    
 
-            print(self.name_exist())    
-
-            if self.name_exist():
+            if self.name_exist(self.name):
 
                 query = 'INSERT INTO product VALUES(NULL, ?, ?, ?)'
                 parameters = (self.name.get(), self.price.get(), self.quantity.get())
@@ -187,12 +192,19 @@ class Product:
     def edit_records(self, new_name, name, new_price, old_price, new_quantity):
 
         if self.validation(new_name, new_price, new_quantity): #validacion para saber que todos los campos tengan contenido
-            query = 'UPDATE product SET name = ?, price = ?, quantity = ? WHERE name = ? AND price = ?'
-            parameters = (new_name.get(), new_price.get(), new_quantity.get(), name, old_price)
-            self.run_query(query, parameters)
-            self.edit_wind.destroy()
-            self.message['text'] = 'Record {} update successfully'.format(name) 
-            self.get_products()
+
+            if self.name_exist(new_name, name): #validacion para asegurar que no agregemos un nombre repetido al editar, el parametro name es para enviar como punto de comparacion
+                query = 'UPDATE product SET name = ?, price = ?, quantity = ? WHERE name = ? AND price = ?'
+                parameters = (new_name.get(), new_price.get(), new_quantity.get(), name, old_price)
+                self.run_query(query, parameters)
+                self.edit_wind.destroy()
+                self.message['text'] = 'Record {} update successfully'.format(name) 
+                self.get_products()
+            else:
+                #crear una ventana encima cuando el usuario no ingresa los campos
+                self.error_wind = Toplevel()
+                self.error_wind.title = 'Error product'
+                Label(self.error_wind, text="Record update Un-Successfully, try again").grid(row=0, column=0)
         else:
             #crear una ventana encima cuando el usuario no ingresa los campos
             self.error_wind = Toplevel()
